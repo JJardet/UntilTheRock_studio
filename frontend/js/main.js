@@ -146,7 +146,7 @@ function reservationStudioPage() {
   }, 0);
   return `
     <section class="section" style="padding-top: 120px;">
-      <h2 class="section-title">Réservation Studio</h2>
+      <h2 class="section-title">Réservation salle de répétition</h2>
       ${renderInlinePortfolio('Notre studio en photos')}
       <div class="form-container">
         <form id="studio-form">
@@ -274,7 +274,7 @@ async function handleRecordingSession(e) {
     await api.bookRecording(new FormData(e.target));
     alert('Session enregistrée. Nous vous contacterons sous 24 h.');
     e.target.reset();
-  } catch { alert('Erreur lors de la réservation. Veuillez réessayer.'); }
+  } catch { alert('Erreur lors de l\'envoie du devis. Veuillez réessayer.'); }
 }
 
 function updateRecordingDemoLabel(input) {
