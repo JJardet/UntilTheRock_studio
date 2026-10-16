@@ -6,11 +6,9 @@ const routes = {
   '/portfolio': portfolioPage,
   '/portfolio/materiel': portfolioMaterielPage,
   '/portfolio/studio': portfolioStudioPage,
-  '/portfolio/mastering': portfolioMasteringPage,
   '/portfolio/enregistrement': portfolioRecordingPage,
   '/reservation-materiel': reservationMaterielPage,
   '/reservation-studio': reservationStudioPage,
-  '/mastering': masteringPage,
   '/enregistrement': enregistrementPage,
   '/contact': contactPage,
   '/admin-login': adminLoginPage,
@@ -74,7 +72,7 @@ function homePage() {
       <div class="hero-bg"></div>
       <div class="hero-content">
         <h1>Bienvenue chez UntilTheRock</h1>
-        <p>Votre studio d'enregistrement professionnel. Enregistrement, mastering, location de matériel - Tout pour votre projet musical.</p>
+        <p>Votre studio d'enregistrement professionnel. Enregistrement et location de matériel — tout pour votre projet musical.</p>
         <div class="cta-buttons">
           <button class="btn btn-primary" onclick="navigateTo('/reservation-studio')">Réserver un Studio</button>
           <button class="btn btn-outline" onclick="navigateTo('/contact')">Nous Contacter</button>
@@ -94,13 +92,8 @@ function homePage() {
           <h3>Réservation Studio</h3>
           <p>Réservez nos studios d'enregistrement équipés du meilleur matériel audio.</p>
         </div>
-        <div class="service-card" onclick="navigateTo('/mastering')">
-          <div class="service-icon">3</div>
-          <h3>Mastering</h3>
-          <p>Service de mastering professionnel pour sublimer vos productions.</p>
-        </div>
         <div class="service-card" onclick="navigateTo('/enregistrement')">
-          <div class="service-icon">4</div>
+          <div class="service-icon">3</div>
           <h3>Sessions d'Enregistrement</h3>
           <p>Enregistrez vos morceaux avec nos ingénieurs son expérimentés.</p>
         </div>
@@ -190,39 +183,6 @@ function reservationStudioPage() {
   `;
 }
 
-function masteringPage() {
-  setTimeout(() => {
-    document.getElementById('mastering-form')?.addEventListener('submit', handleMasteringRequest);
-    loadPortfolioItems('mastering');
-  }, 0);
-  return `
-    <section class="section" style="padding-top: 120px;">
-      <h2 class="section-title">Service de Mastering</h2>
-      ${renderInlinePortfolio('Nos réalisations de mastering')}
-      <div class="form-container">
-        <form id="mastering-form">
-          <div class="form-group"><label>Nom complet *</label><input type="text" name="name" required></div>
-          <div class="form-group"><label>Email *</label><input type="email" name="email" required></div>
-          <div class="form-group"><label>Téléphone *</label><input type="tel" name="phone" required></div>
-          <div class="form-group"><label>Nombre de pistes *</label><input type="number" name="track_count" min="1" required></div>
-          <div class="form-group">
-            <label>Format souhaité *</label>
-            <select name="format" required>
-              <option value="">Sélectionnez...</option>
-              <option value="WAV 24-bit">WAV 24-bit</option>
-              <option value="WAV 16-bit">WAV 16-bit</option>
-              <option value="MP3 320kbps">MP3 320kbps</option>
-              <option value="FLAC">FLAC</option>
-              <option value="Tous formats">Tous formats</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Description du projet</label><textarea name="message" placeholder="Décrivez votre projet, style musical, références..."></textarea></div>
-          <button type="submit" class="btn btn-primary" style="width: 100%;">Demander un devis</button>
-        </form>
-      </div>
-    </section>
-  `;
-}
 
 function enregistrementPage() {
   setTimeout(() => {
@@ -234,8 +194,8 @@ function enregistrementPage() {
       <h2 class="section-title">Session d'Enregistrement</h2>
       ${renderInlinePortfolio('Nos sessions en photos')}
       <div class="form-container">
-        <form id="recording-form">
-          <div class="form-group"><label>Nom complet *</label><input type="text" name="name" required></div>
+        <form id="recording-form" enctype="multipart/form-data">
+          <div class="form-group"><label>Nom du groupe/artiste*</label><input type="text" name="name" required></div>
           <div class="form-group"><label>Email *</label><input type="email" name="email" required></div>
           <div class="form-group"><label>Téléphone *</label><input type="tel" name="phone" required></div>
           <div class="form-group">
@@ -249,10 +209,18 @@ function enregistrementPage() {
               <option value="Voix-off">Voix-off</option>
             </select>
           </div>
-          <div class="form-group"><label>Date souhaitée *</label><input type="date" name="date" required></div>
-          <div class="form-group"><label>Durée estimée (heures) *</label><input type="number" name="duration" min="1" max="24" required></div>
-          <div class="form-group"><label>Détails du projet</label><textarea name="message" placeholder="Décrivez votre projet, nombre de musiciens, style..."></textarea></div>
-          <button type="submit" class="btn btn-primary" style="width: 100%;">Réserver une session</button>
+          <div class="form-group"><label>Nombre de musiciens *</label><input type="number" name="nb_musiciens" required></div>
+          <div class="form-group"><label>Instruments *</label><input type="text" name="instruments" required></div>
+          <div class="form-group"><label>Vos réseaux sociaux</label><input type="text" name="social"></div>
+          <div class="form-group">
+            <label>Votre maquette (audio ou vidéo)</label>
+            <input type="file" name="demo" id="recording-demo-upload" accept="audio/*,video/*" style="display: none;" onchange="updateRecordingDemoLabel(this)">
+            <label for="recording-demo-upload" class="btn btn-outline" style="display: inline-block; cursor: pointer;">📁 Ajouter un fichier</label>
+            <span id="recording-demo-name" style="display: block; color: var(--gray); margin-top: 0.75rem;">Aucun fichier sélectionné</span>
+            <small style="color: var(--gray); display: block; margin-top: 0.5rem;">Formats audio ou vidéo, 100 Mo maximum.</small>
+          </div>
+          <div class="form-group"><label>Détails du projet</label><textarea name="message" placeholder="Décrivez votre projet, genre musical, ambiance souhaitée"></textarea></div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Demander un devis</button>
         </form>
       </div>
     </section>
@@ -300,22 +268,17 @@ async function handleStudioBooking(e) {
   } catch { alert('Erreur lors de la réservation. Veuillez réessayer.'); }
 }
 
-async function handleMasteringRequest(e) {
-  e.preventDefault();
-  try {
-    await api.requestMastering(Object.fromEntries(new FormData(e.target)));
-    alert('Demande enregistrée. Nous vous enverrons un devis sous 48 h.');
-    e.target.reset();
-  } catch { alert('Erreur lors de l\'envoi. Veuillez réessayer.'); }
-}
-
 async function handleRecordingSession(e) {
   e.preventDefault();
   try {
-    await api.bookRecording(Object.fromEntries(new FormData(e.target)));
+    await api.bookRecording(new FormData(e.target));
     alert('Session enregistrée. Nous vous contacterons sous 24 h.');
     e.target.reset();
   } catch { alert('Erreur lors de la réservation. Veuillez réessayer.'); }
+}
+
+function updateRecordingDemoLabel(input) {
+  document.getElementById('recording-demo-name').textContent = input.files[0]?.name || 'Aucun fichier sélectionné';
 }
 
 async function handleContactForm(e) {
@@ -366,7 +329,7 @@ function cgvPage() {
       <h2 class="section-title">Conditions Générales de Vente</h2>
       <div class="form-container" style="max-width: 800px;">
         <h3 style="color: var(--primary); margin-bottom: 1rem;">Article 1 - Objet</h3>
-        <p style="color: var(--gray); line-height: 1.8;">Les présentes CGV régissent les relations entre UntilTheRock Studio et ses clients pour les services de location de matériel, réservation de studio, mastering et enregistrement.</p>
+        <p style="color: var(--gray); line-height: 1.8;">Les présentes CGV régissent les relations entre UntilTheRock Studio et ses clients pour les services de location de matériel, réservation de studio et enregistrement.</p>
         <h3 style="color: var(--primary); margin: 2rem 0 1rem;">Article 2 - Réservations</h3>
         <p style="color: var(--gray); line-height: 1.8;">Toute réservation est confirmée après validation par UntilTheRock Studio. Un acompte peut être demandé pour confirmer la réservation.</p>
         <h3 style="color: var(--primary); margin: 2rem 0 1rem;">Article 3 - Tarifs</h3>
@@ -448,10 +411,6 @@ async function loadAdminData() {
           ${renderBookingsList(bookings.studio || [], 'studio')}
         </div>
         <div class="service-card">
-          <h3>Demandes Mastering (${bookings.mastering?.length || 0})</h3>
-          ${renderBookingsList(bookings.mastering || [], 'mastering')}
-        </div>
-        <div class="service-card">
           <h3>Sessions Enregistrement (${bookings.recording?.length || 0})</h3>
           ${renderBookingsList(bookings.recording || [], 'recording')}
         </div>
@@ -501,14 +460,27 @@ function renderBookingDetails(b, type) {
   switch (type) {
     case 'equipment': return `<p style="color: var(--light); margin-bottom: 0.5rem;"><strong>🎸 Matériel:</strong> ${b.equipment}</p><p style="color: var(--gray); font-size: 0.9rem;">📅 Du ${new Date(b.start_date).toLocaleDateString('fr-FR')} au ${new Date(b.end_date).toLocaleDateString('fr-FR')}</p>`;
     case 'studio':    return `<p style="color: var(--light); margin-bottom: 0.5rem;"><strong>🎙️ Studio:</strong> ${b.studio_type}</p><p style="color: var(--gray); font-size: 0.9rem;">📅 ${new Date(b.date).toLocaleDateString('fr-FR')} | 🕐 ${b.time_slot} (${b.duration}h)</p>`;
-    case 'mastering': return `<p style="color: var(--light); margin-bottom: 0.5rem;"><strong>🎚️ Mastering:</strong> ${b.track_count} piste(s)</p><p style="color: var(--gray); font-size: 0.9rem;">📀 Format: ${b.format}</p>`;
-    case 'recording': return `<p style="color: var(--light); margin-bottom: 0.5rem;"><strong>🎵 Projet:</strong> ${b.project_type}</p><p style="color: var(--gray); font-size: 0.9rem;">📅 ${new Date(b.date).toLocaleDateString('fr-FR')} | ⏱️ ${b.duration}h</p>`;
+    case 'recording': return `<p style="color: var(--light); margin-bottom: 0.5rem;"><strong>🎵 Projet:</strong> ${b.project_type}</p><p style="color: var(--gray); font-size: 0.9rem;">📅 ${new Date(b.date).toLocaleDateString('fr-FR')} | ⏱️ ${b.duration}h</p>${b.has_demo ? `<button onclick="downloadRecordingDemo(${b.id})" class="btn btn-outline" style="margin-top: 1rem; padding: 0.5rem 1rem; font-size: 0.9rem;">⬇️ Télécharger la maquette</button>` : ''}`;
     default: return '';
   }
 }
 
 function getStatusColor(s) { return { pending: '#ff9800', confirmed: '#2196f3', completed: '#4caf50', cancelled: '#f44336' }[s] || '#666'; }
 function getStatusLabel(s) { return { pending: '⏳ En attente', confirmed: '✅ Confirmé', completed: '✓ Terminé', cancelled: '❌ Annulé' }[s] || s; }
+
+async function downloadRecordingDemo(id) {
+  try {
+    const { blob, filename } = await api.downloadRecordingDemo(id);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    alert('❌ Impossible de télécharger la maquette.');
+  }
+}
 
 async function updateBookingStatus(id, type, newStatus) {
   const msg = { confirmed: 'Confirmer cette réservation ?', completed: 'Marquer comme terminée ?', cancelled: 'Annuler cette réservation ?' };
@@ -650,7 +622,6 @@ function adminPortfolioPage() {
               <option value="">-- Sélectionnez une page --</option>
               <option value="equipment">🎸 Location de Matériel</option>
               <option value="studio">🎙️ Réservation Studio</option>
-              <option value="mastering">🎚️ Mastering</option>
               <option value="recording">🎵 Enregistrement</option>
             </select>
             <small style="color: var(--gray); display: block; margin-top: 0.5rem;">💡 Le projet apparaîtra sur la page portfolio correspondante</small>
@@ -829,7 +800,6 @@ function portfolioPage() {
         <button class="btn btn-outline filter-btn active" onclick="filterPortfolio('all')" data-filter="all" style="margin:0.5rem;">Tout</button>
         <button class="btn btn-outline filter-btn" onclick="filterPortfolio('equipment')" data-filter="equipment" style="margin:0.5rem;">Matériel</button>
         <button class="btn btn-outline filter-btn" onclick="filterPortfolio('studio')" data-filter="studio" style="margin:0.5rem;">Studio</button>
-        <button class="btn btn-outline filter-btn" onclick="filterPortfolio('mastering')" data-filter="mastering" style="margin:0.5rem;">Mastering</button>
         <button class="btn btn-outline filter-btn" onclick="filterPortfolio('recording')" data-filter="recording" style="margin:0.5rem;">Enregistrement</button>
       </div>
       <div id="portfolio-grid" class="services-grid"><p style="text-align:center;color:var(--gray);">Chargement...</p></div>
@@ -838,7 +808,6 @@ function portfolioPage() {
 
 function portfolioMaterielPage()    { setTimeout(() => loadPortfolioItems('equipment'), 0); return renderPortfolioTemplate('Portfolio Matériel', 'Découvrez notre matériel en action'); }
 function portfolioStudioPage()      { setTimeout(() => loadPortfolioItems('studio'), 0);    return renderPortfolioTemplate('Portfolio Studio', 'Nos studios d\'enregistrement'); }
-function portfolioMasteringPage()   { setTimeout(() => loadPortfolioItems('mastering'), 0); return renderPortfolioTemplate('Portfolio Mastering', 'Nos réalisations de mastering'); }
 function portfolioRecordingPage()   { setTimeout(() => loadPortfolioItems('recording'), 0); return renderPortfolioTemplate('Portfolio Enregistrement', 'Nos sessions d\'enregistrement'); }
 
 function renderPortfolioTemplate(title, subtitle) {
@@ -883,7 +852,7 @@ function renderPublicPortfolio(items) {
     </div>`).join('');
 }
 
-function getServiceLabel(t) { return { equipment:'Matériel', studio:'Studio', mastering:'Mastering', recording:'Enregistrement' }[t] || t; }
+function getServiceLabel(t) { return { equipment:'Matériel', studio:'Studio', recording:'Enregistrement' }[t] || t; }
 
 function filterPortfolio(type) {
   loadPortfolioItems(type);
@@ -1168,7 +1137,6 @@ function calRenderSlotPanel(dateStr, data) {
                   <option value="">Sélectionnez...</option>
                   <option value="studio">Réservation Studio</option>
                   <option value="recording">Session d'Enregistrement</option>
-                  <option value="mastering">Mastering</option>
                   <option value="equipment">Location de Matériel</option>
                 </select>
               </div>

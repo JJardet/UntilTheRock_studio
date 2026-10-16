@@ -1,6 +1,8 @@
 const express = require('express');
+const fs = require('fs');
 const { db } = require('../database');
 const authMiddleware = require('../middleware/auth');
+const { recordingDemoUpload } = require('../upload');
 const { logger } = require('../logger');
 
 const router = express.Router();
@@ -15,6 +17,7 @@ router.post('/equipment', (req, res) => {
     [name, email, phone, equipment, start_date, end_date, message],
     function(err) {
       if (err) {
+        if (demoPath) fs.unlink(demoPath, () => {});
         return res.status(500).json({ error: 'Erreur lors de la réservation' });
       }
       logger.booking('equipment', { id: this.lastID, name, email });
@@ -41,32 +44,17 @@ router.post('/studio', (req, res) => {
   );
 });
 
-// Demande mastering
-router.post('/mastering', (req, res) => {
-  const { name, email, phone, track_count, format, message } = req.body;
-
-  db.run(
-    `INSERT INTO mastering_requests (name, email, phone, track_count, format, message)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [name, email, phone, track_count, format, message],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Erreur lors de la demande' });
-      }
-      logger.booking('mastering', { id: this.lastID, name, email });
-      res.json({ message: 'Demande enregistrée', id: this.lastID });
-    }
-  );
-});
-
 // Session enregistrement
-router.post('/recording', (req, res) => {
+router.post('/recording', recordingDemoUpload, (req, res) => {
   const { name, email, phone, project_type, date, duration, message } = req.body;
+  const demoPath = req.file?.path || null;
+  const demoOriginalName = req.file?.originalname || null;
 
   db.run(
-    `INSERT INTO recording_sessions (name, email, phone, project_type, date, duration, message)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [name, email, phone, project_type, date, duration, message],
+    `INSERT INTO recording_sessions
+      (name, email, phone, project_type, date, duration, message, demo_path, demo_original_name)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [name, email, phone, project_type, date, duration, message, demoPath, demoOriginalName],
     function(err) {
       if (err) {
         return res.status(500).json({ error: 'Erreur lors de la réservation' });
@@ -77,13 +65,31 @@ router.post('/recording', (req, res) => {
   );
 });
 
+router.get('/recording/:id/demo', authMiddleware, (req, res) => {
+  db.get(
+    'SELECT demo_path, demo_original_name FROM recording_sessions WHERE id = ?',
+    [req.params.id],
+    (err, recording) => {
+      if (err) {
+        return res.status(500).json({ error: 'Erreur serveur' });
+      }
+      if (!recording?.demo_path) {
+        return res.status(404).json({ error: 'Maquette introuvable' });
+      }
+
+      res.download(recording.demo_path, recording.demo_original_name);
+    }
+  );
+});
+
 // Admin: Récupérer toutes les réservations
 router.get('/all', authMiddleware, (req, res) => {
   const queries = {
     equipment: 'SELECT * FROM booking_equipment ORDER BY created_at DESC',
     studio: 'SELECT * FROM booking_studio ORDER BY created_at DESC',
-    mastering: 'SELECT * FROM mastering_requests ORDER BY created_at DESC',
-    recording: 'SELECT * FROM recording_sessions ORDER BY created_at DESC'
+    recording: `SELECT id, name, email, phone, project_type, date, duration, message, status, created_at,
+      CASE WHEN demo_path IS NOT NULL THEN 1 ELSE 0 END AS has_demo
+      FROM recording_sessions ORDER BY created_at DESC`
   };
 
   const results = {};
@@ -108,7 +114,6 @@ router.put('/:type/:id/status', authMiddleware, (req, res) => {
   const tableMap = {
     equipment: 'booking_equipment',
     studio: 'booking_studio',
-    mastering: 'mastering_requests',
     recording: 'recording_sessions'
   };
 
@@ -133,7 +138,6 @@ router.delete('/:type/:id', authMiddleware, (req, res) => {
   const tableMap = {
     equipment: 'booking_equipment',
     studio: 'booking_studio',
-    mastering: 'mastering_requests',
     recording: 'recording_sessions'
   };
 
@@ -142,17 +146,36 @@ router.delete('/:type/:id', authMiddleware, (req, res) => {
     return res.status(400).json({ error: 'Type invalide' });
   }
 
-  db.run(`DELETE FROM ${table} WHERE id = ?`, [id], function(err) {
+  const deleteBooking = () => {
+    db.run(`DELETE FROM ${table} WHERE id = ?`, [id], function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Erreur lors de la suppression' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Réservation non trouvée' });
+      }
+
+      logger.admin('Suppression réservation', req.admin.id, { type, id });
+      res.json({ message: 'Réservation supprimée' });
+    });
+  };
+
+  if (type !== 'recording') {
+    deleteBooking();
+    return;
+  }
+
+  db.get('SELECT demo_path FROM recording_sessions WHERE id = ?', [id], (err, recording) => {
     if (err) {
-      return res.status(500).json({ error: 'Erreur lors de la suppression' });
+      return res.status(500).json({ error: 'Erreur serveur' });
     }
-    
-    if (this.changes === 0) {
+    if (!recording) {
       return res.status(404).json({ error: 'Réservation non trouvée' });
     }
-    
-    logger.admin('Suppression réservation', req.admin.id, { type, id });
-    res.json({ message: 'Réservation supprimée' });
+
+    if (recording.demo_path) fs.unlink(recording.demo_path, () => {});
+    deleteBooking();
   });
 });
 

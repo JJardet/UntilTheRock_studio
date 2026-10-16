@@ -27,7 +27,6 @@ function cleanOldBookings() {
     const tables = [
       'booking_equipment',
       'booking_studio',
-      'mastering_requests',
       'recording_sessions'
     ];
 
@@ -164,7 +163,6 @@ function getDatabaseStats() {
     const queries = {
       bookings_equipment: 'SELECT COUNT(*) as count FROM booking_equipment',
       bookings_studio: 'SELECT COUNT(*) as count FROM booking_studio',
-      mastering_requests: 'SELECT COUNT(*) as count FROM mastering_requests',
       recording_sessions: 'SELECT COUNT(*) as count FROM recording_sessions',
       contacts: 'SELECT COUNT(*) as count FROM contacts',
       portfolio: 'SELECT COUNT(*) as count FROM portfolio'
@@ -198,7 +196,6 @@ async function generateReport() {
   logger.info('\n📈 Statistiques actuelles:');
   logger.info(`   Réservations matériel: ${stats.bookings_equipment}`);
   logger.info(`   Réservations studio: ${stats.bookings_studio}`);
-  logger.info(`   Demandes mastering: ${stats.mastering_requests}`);
   logger.info(`   Sessions enregistrement: ${stats.recording_sessions}`);
   logger.info(`   Messages contact: ${stats.contacts}`);
   logger.info(`   Éléments portfolio: ${stats.portfolio}`);

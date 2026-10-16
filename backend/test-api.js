@@ -115,22 +115,7 @@ async function runTests() {
   });
   logTest('Créer réservation studio', studioBooking.status === 200);
 
-  // Test 5: Demande mastering
-  console.log('\n🎚️ Tests Mastering');
-  const masteringRequest = await apiRequest('/bookings/mastering', {
-    method: 'POST',
-    body: JSON.stringify({
-      name: 'Test Producer',
-      email: 'producer@example.com',
-      phone: '0123456789',
-      track_count: 5,
-      format: 'WAV 24-bit',
-      message: 'Test mastering request'
-    })
-  });
-  logTest('Créer demande mastering', masteringRequest.status === 200);
-
-  // Test 6: Session enregistrement
+  // Test 5: Session enregistrement
   console.log('\n🎵 Tests Enregistrement');
   const recordingSession = await apiRequest('/bookings/recording', {
     method: 'POST',
@@ -146,7 +131,7 @@ async function runTests() {
   });
   logTest('Créer session enregistrement', recordingSession.status === 200);
 
-  // Test 7: Contact
+  // Test 6: Contact
   console.log('\n📧 Tests Contact');
   const contactMessage = await apiRequest('/contact', {
     method: 'POST',
@@ -159,7 +144,7 @@ async function runTests() {
   });
   logTest('Envoyer message contact', contactMessage.status === 200);
 
-  // Test 8: Récupérer toutes les réservations (admin)
+  // Test 7: Récupérer toutes les réservations (admin)
   console.log('\n👑 Tests Admin');
   if (adminToken) {
     const allBookings = await apiRequest('/bookings/all', {
@@ -177,7 +162,7 @@ async function runTests() {
     logTest('Récupérer contacts (admin)', allContacts.status === 200);
   }
 
-  // Test 9: Portfolio
+  // Test 8: Portfolio
   console.log('\n🖼️ Tests Portfolio');
   const portfolioItems = await apiRequest('/portfolio');
   logTest('Récupérer portfolio', portfolioItems.status === 200);
@@ -189,7 +174,7 @@ async function runTests() {
         'Authorization': `Bearer ${adminToken}`
       },
       body: JSON.stringify({
-        service_type: 'mastering',
+        service_type: 'recording',
         title: 'Test Project',
         description: 'Test portfolio item',
         image_url: 'https://example.com/image.jpg',
@@ -199,7 +184,7 @@ async function runTests() {
     logTest('Ajouter élément portfolio (admin)', addPortfolio.status === 200);
   }
 
-  // Test 10: Accès non autorisé
+  // Test 9: Accès non autorisé
   console.log('\n🔒 Tests Sécurité');
   const unauthorizedAccess = await apiRequest('/bookings/all');
   logTest('Bloquer accès non autorisé', unauthorizedAccess.status === 401);

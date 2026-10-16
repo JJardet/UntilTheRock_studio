@@ -57,19 +57,6 @@ const initialize = () => {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`);
 
-      // Table demandes mastering
-      db.run(`CREATE TABLE IF NOT EXISTS mastering_requests (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        email TEXT NOT NULL,
-        phone TEXT NOT NULL,
-        track_count INTEGER NOT NULL,
-        format TEXT NOT NULL,
-        message TEXT,
-        status TEXT DEFAULT 'pending',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`);
-
       // Table sessions enregistrement
       db.run(`CREATE TABLE IF NOT EXISTS recording_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,6 +67,8 @@ const initialize = () => {
         date DATE NOT NULL,
         duration INTEGER NOT NULL,
         message TEXT,
+        demo_path TEXT,
+        demo_original_name TEXT,
         status TEXT DEFAULT 'pending',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`);

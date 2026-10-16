@@ -4,7 +4,7 @@ const SITE_CONFIG = {
   studio: {
     name: "UntilTheRock",
     tagline: "Votre studio d'enregistrement professionnel",
-    description: "Enregistrement, mastering, location de matériel - Tout pour votre projet musical",
+    description: "Enregistrement et location de matériel - Tout pour votre projet musical",
     email: "contact@untiltherock.com",
     phone: "+33 1 23 45 67 89",
     address: "123 Rue de la Musique, 75000 Paris",

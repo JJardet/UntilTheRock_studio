@@ -14,7 +14,7 @@ const migrations = [
     }
   },
   // Ajoutez vos futures migrations ici
- {
+  {
     version: 2,
     description: "Ajout colonne video_url au portfolio",
     up: () => {
@@ -27,6 +27,52 @@ const migrations = [
           }
           resolve();
         });
+      });
+    }
+  },
+  {
+    version: 3,
+    description: 'Suppression du service mastering',
+    up: () => {
+      return new Promise((resolve, reject) => {
+        db.serialize(() => {
+          db.run('DROP TABLE IF EXISTS mastering_requests', (dropError) => {
+            if (dropError) {
+              reject(dropError);
+              return;
+            }
+
+            db.run("DELETE FROM portfolio WHERE service_type = 'mastering'", (deleteError) => {
+              if (deleteError) reject(deleteError);
+              else resolve();
+            });
+          });
+        });
+      });
+    }
+  },
+  {
+    version: 4,
+    description: 'Ajout des maquettes aux demandes d’enregistrement',
+    up: () => {
+      return new Promise((resolve, reject) => {
+        db.run(
+          'ALTER TABLE recording_sessions ADD COLUMN demo_path TEXT',
+          (pathError) => {
+            if (pathError && !pathError.message.includes('duplicate column')) {
+              reject(pathError);
+              return;
+            }
+
+            db.run(
+              'ALTER TABLE recording_sessions ADD COLUMN demo_original_name TEXT',
+              (nameError) => {
+                if (nameError && !nameError.message.includes('duplicate column')) reject(nameError);
+                else resolve();
+              }
+            );
+          }
+        );
       });
     }
   }

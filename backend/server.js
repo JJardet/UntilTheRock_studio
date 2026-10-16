@@ -31,6 +31,9 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/contact', contactRoutes);
 
+app.get(['/mastering', '/portfolio/mastering'], (req, res) => {
+  res.status(404).send('Page introuvable');
+});
 
 // Route pour toutes les pages HTML
 app.get('*', (req, res) => {

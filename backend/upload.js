@@ -6,7 +6,8 @@ const fs = require('fs');
 const uploadDirs = [
   path.join(__dirname, '../frontend/assets/uploads/images'),
   path.join(__dirname, '../frontend/assets/uploads/audio'),
-  path.join(__dirname, '../frontend/assets/uploads/videos')
+  path.join(__dirname, '../frontend/assets/uploads/videos'),
+  path.join(__dirname, 'uploads/recording-demos')
 ];
 
 uploadDirs.forEach(dir => {
@@ -71,6 +72,33 @@ const upload = multer({
   }
 });
 
+const recordingDemoStorage = multer.diskStorage({
+  destination: path.join(__dirname, 'uploads/recording-demos'),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    const basename = path.basename(file.originalname, ext)
+      .replace(/[^a-zA-Z0-9]/g, '-')
+      .toLowerCase();
+
+    cb(null, `${basename}-${uniqueSuffix}${ext}`);
+  }
+});
+
+const recordingDemoUpload = multer({
+  storage: recordingDemoStorage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('audio/') || file.mimetype.startsWith('video/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Seuls les fichiers audio et vidéo sont autorisés'), false);
+    }
+  },
+  limits: {
+    fileSize: 100 * 1024 * 1024
+  }
+}).single('demo');
+
 // Middleware pour upload multiple
 const uploadFields = upload.fields([
   { name: 'image', maxCount: 1 },
@@ -95,4 +123,4 @@ const deleteFile = (filePath) => {
   });
 };
 
-module.exports = { uploadFields, deleteFile };
+module.exports = { uploadFields, recordingDemoUpload, deleteFile };

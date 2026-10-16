@@ -5,8 +5,9 @@ const api = {
   // Helper pour les requêtes
   async request(endpoint, options = {}) {
     const token = localStorage.getItem('admin_token');
+    const isFormData = options.body instanceof FormData;
     const headers = {
-      'Content-Type': 'application/json',
+      ...(!isFormData && { 'Content-Type': 'application/json' }),
       ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers
     };
@@ -58,18 +59,27 @@ async deleteBooking(type, id) {
     });
   },
 
-  async requestMastering(data) {
-    return this.request('/bookings/mastering', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-  },
-
   async bookRecording(data) {
     return this.request('/bookings/recording', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: data instanceof FormData ? data : JSON.stringify(data)
     });
+  },
+
+  async downloadRecordingDemo(id) {
+    const token = localStorage.getItem('admin_token');
+    const response = await fetch(`${API_URL}/bookings/recording/${id}/demo`, {
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return {
+      blob: await response.blob(),
+      filename: response.headers.get('content-disposition')?.match(/filename="?([^";]+)"?/)?.[1] || 'maquette'
+    };
   },
 
   async getAllBookings() {
@@ -151,4 +161,3 @@ async deleteBooking(type, id) {
     return this.request('/calendar/block', { method: 'POST', body: JSON.stringify(data) });
   },
 };
-
