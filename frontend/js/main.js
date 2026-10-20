@@ -82,6 +82,7 @@ function homePage() {
       </div>
     </section>
     ${renderHomeStudioTour('home-tour-top', '/assets/uploads/videos/854923-hd-1920-1080-25fps-1768848893786-738266821.mp4', 'Version A · avant les services')}
+    ${renderAboutSnippet()}
     <section class="section">
       <h2 class="section-title">Nos Services</h2>
       <div class="services-grid">
@@ -275,6 +276,10 @@ function contactPage() {
       </div>
     </section>
   `;
+}
+
+function renderAboutSnippet() {
+  return `<section class="section about-page"><span class="eyebrow">L’HISTOIRE DU LIEU</span><h2 class="section-title">Qui sommes-nous ?</h2><div class="about-grid"><img src="/assets/generated/studio-showcase-v1.png" alt="Le studio UntilTheRock"><div><h3>Un studio pensé pour les projets qui comptent.</h3><p>UntilTheRock accompagne les artistes, groupes et organisateurs dans leurs projets d’enregistrement, de répétition et de prestation technique.</p><p>Notre objectif : proposer un lieu accueillant, un matériel fiable et un accompagnement humain, du premier échange jusqu’au rendu final.</p><a class="btn btn-primary" href="/contact" onclick="navigateTo('/contact');return false;">Parlons de votre projet</a></div></div></section>`;
 }
 
 // ============================================================
@@ -777,9 +782,9 @@ function adminPortfolioPage() {
               <option value="">-- Sélectionnez une page --</option>
               <option value="equipment">🎸 Location de Matériel</option>
               <option value="studio">🎙️ Réservation Studio</option>
-              <option value="recording">🎵 Enregistrement</option>
+              <option value="recording">🎵 Enregistrement / Mix Sessions</option>
             </select>
-            <small style="color: var(--gray); display: block; margin-top: 0.5rem;">💡 Le projet apparaîtra sur la page portfolio correspondante</small>
+            <small style="color: var(--gray); display: block; margin-top: 0.5rem;">💡 Un audio ajouté dans « Enregistrement / Mix Sessions » apparaît dans le lecteur Mix Sessions. Vous pouvez le supprimer depuis la liste ci-dessous.</small>
           </div>
           <div class="form-group"><label>Titre *</label><input type="text" name="title" required placeholder="Ex: Projet Rock 2025"></div>
           <div class="form-group"><label>Description</label><textarea name="description" placeholder="Décrivez le projet..." rows="3"></textarea></div>
