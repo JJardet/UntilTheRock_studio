@@ -12,6 +12,7 @@ const bookingRoutes = require('./routes/bookings');
 const portfolioRoutes = require('./routes/portfolio');
 const contactRoutes = require('./routes/contact');
 const calendarRoutes = require('./routes/calendar');
+const eventRoutes = require('./routes/events');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,12 +25,14 @@ app.use(requestLogger);  // Logger les requêtes
 app.use('/api/calendar', calendarRoutes);
 // Servir les fichiers statiques du frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes API
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/events', eventRoutes);
 
 app.get(['/mastering', '/portfolio/mastering'], (req, res) => {
   res.status(404).send('Page introuvable');

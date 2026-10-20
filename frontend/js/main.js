@@ -10,6 +10,7 @@ const routes = {
   '/reservation-materiel': reservationMaterielPage,
   '/reservation-studio': reservationStudioPage,
   '/enregistrement': enregistrementPage,
+  '/evenements': eventsPage,
   '/contact': contactPage,
   '/admin-login': adminLoginPage,
   '/admin-dashboard': adminDashboardPage,
@@ -19,6 +20,7 @@ const routes = {
   '/cgv': cgvPage,
   '/calendrier': calendarPage,
   '/admin-calendrier': adminCalendarPage,
+  '/admin-evenements': adminEventsPage,
 };
 
 function navigateTo(path) {
@@ -79,6 +81,7 @@ function homePage() {
         </div>
       </div>
     </section>
+    ${renderHomeStudioTour('home-tour-top', '/assets/uploads/videos/854923-hd-1920-1080-25fps-1768848893786-738266821.mp4', 'Version A · avant les services')}
     <section class="section">
       <h2 class="section-title">Nos Services</h2>
       <div class="services-grid">
@@ -102,6 +105,10 @@ function homePage() {
   `;
 }
 
+function renderHomeStudioTour(id, video, label) {
+  return `<section class="home-studio-tour ${id}"><div class="home-tour-copy"><span class="eyebrow">DANS LE STUDIO</span><h2>Studio tour</h2><p>${label}</p></div><div class="daw-window home-daw-window"><div class="daw-titlebar"><span class="traffic-lights"><b></b><b></b><b></b></span><span>UNTILTHEROCK · STUDIO TOUR</span><span>REC</span></div><div class="video-frame"><video controls preload="metadata"><source src="${video}"></video></div><div class="daw-timeline"><span>LIVE</span><div><i></i></div><span>STUDIO TOUR</span></div></div></section>`;
+}
+
 function reservationMaterielPage() {
   setTimeout(() => {
     document.getElementById('equipment-form')?.addEventListener('submit', handleEquipmentBooking);
@@ -110,6 +117,13 @@ function reservationMaterielPage() {
   return `
     <section class="section" style="padding-top: 120px;">
       <h2 class="section-title">Location de Matériel</h2>
+      <div class="equipment-pack-grid">
+        ${renderEquipmentPack('Pack son', 'Une solution complète pour sonoriser votre événement.', 'Enceintes, table de mixage, micros et câblage.')}
+        ${renderEquipmentPack('Pack lumière', 'Créez une ambiance scénique sur mesure.', 'Projecteurs LED, pieds, contrôleur et effets.')}
+        ${renderEquipmentPack('Son à l’unité', 'Composez votre configuration audio.', 'Micros, enceintes, retours, consoles et accessoires.')}
+        ${renderEquipmentPack('Lumière à l’unité', 'Complétez votre installation lumineuse.', 'PAR LED, lyres, machines à fumée et structures.')}
+        ${renderEquipmentPack('Accessoires', 'Les détails qui font la différence.', 'Pieds, câbles, DI, multipaires et supports.')}
+      </div>
       ${renderInlinePortfolio('Notre matériel en photos')}
       <div class="form-container">
         <form id="equipment-form">
@@ -117,17 +131,8 @@ function reservationMaterielPage() {
           <div class="form-group"><label>Email *</label><input type="email" name="email" required></div>
           <div class="form-group"><label>Téléphone *</label><input type="tel" name="phone" required></div>
           <div class="form-group">
-            <label>Matériel souhaité *</label>
-            <select name="equipment" required>
-              <option value="">Sélectionnez...</option>
-              <option value="Micro Neumann U87">Micro Neumann U87</option>
-              <option value="Guitare Fender Stratocaster">Guitare Fender Stratocaster</option>
-              <option value="Batterie complète">Batterie complète</option>
-              <option value="Pédale d'effet">Pédale d'effet</option>
-              <option value="Ampli Marshall">Ampli Marshall</option>
-              <option value="Synthétiseur">Synthétiseur</option>
-              <option value="Table de mixage">Table de mixage</option>
-            </select>
+            <label>Votre besoin matériel *</label>
+            <textarea name="equipment" required placeholder="Décrivez le matériel dont vous avez besoin, les quantités, le type d’événement et toute contrainte technique..."></textarea>
           </div>
           <div class="form-group"><label>Date de début *</label><input type="date" name="start_date" required></div>
           <div class="form-group"><label>Date de fin *</label><input type="date" name="end_date" required></div>
@@ -139,15 +144,28 @@ function reservationMaterielPage() {
   `;
 }
 
+function renderEquipmentPack(title, text, details) {
+  return `<article class="equipment-pack"><img src="/assets/generated/studio-showcase-v1.png" alt="${title}"><div><h3>${title}</h3><p>${text}</p><small>${details}</small></div></article>`;
+}
+
 function reservationStudioPage() {
   setTimeout(() => {
     document.getElementById('studio-form')?.addEventListener('submit', handleStudioBooking);
     loadPortfolioItems('studio');
+    initRoomCalendars();
   }, 0);
   return `
     <section class="section" style="padding-top: 120px;">
       <h2 class="section-title">Réservation salle de répétition</h2>
       ${renderInlinePortfolio('Notre studio en photos')}
+      <section class="room-calendar-section" aria-label="Disponibilités des salles">
+        <div class="room-calendar-heading"><div><span class="eyebrow">DISPONIBILITÉS EN DIRECT</span><h3>Choisissez votre salle</h3></div><button class="btn btn-outline" onclick="roomCalendarPrev()">‹</button><strong id="room-cal-label"></strong><button class="btn btn-outline" onclick="roomCalendarNext()">›</button></div>
+        <div class="room-calendar-grid">
+          <div class="room-calendar"><h4><i></i>Salle de répétition A</h4><p>Grand format · idéale pour les groupes</p><div id="room-calendar-A" class="mini-calendar"></div></div>
+          <div class="room-calendar"><h4><i></i>Salle de répétition B</h4><p>Configuration compacte et précise</p><div id="room-calendar-B" class="mini-calendar"></div></div>
+        </div>
+        <p class="room-calendar-note">Les créneaux affichés en rouge sont déjà demandés. La réservation reste soumise à confirmation.</p>
+      </section>
       <div class="form-container">
         <form id="studio-form">
           <div class="form-group"><label>Nom complet *</label><input type="text" name="name" required></div>
@@ -157,8 +175,8 @@ function reservationStudioPage() {
             <label>Type de studio *</label>
             <select name="studio_type" required>
               <option value="">Sélectionnez...</option>
-              <option value="Studio A - Grand format">Studio A - Grand format</option>
-              <option value="Studio B - Enregistrement">Studio B - Enregistrement</option>
+              <option value="Studio A - Grand format">Salle de répétition A — Grand format</option>
+              <option value="Studio B - Enregistrement">Salle de répétition B — Configuration compacte</option>
               <option value="Studio C - Mixage">Studio C - Mixage</option>
             </select>
           </div>
@@ -188,10 +206,22 @@ function enregistrementPage() {
   setTimeout(() => {
     document.getElementById('recording-form')?.addEventListener('submit', handleRecordingSession);
     loadPortfolioItems('recording');
+    loadRecordingShowcase();
   }, 0);
   return `
     <section class="section" style="padding-top: 120px;">
       <h2 class="section-title">Session d'Enregistrement</h2>
+      <section class="recording-showcase">
+        <div class="daw-window video-daw">
+          <div class="daw-titlebar"><span class="traffic-lights"><b></b><b></b><b></b></span><span>UNTILTHEROCK · STUDIO TOUR.mov</span><span>REC</span></div>
+          <div class="video-frame"><video controls preload="metadata" poster="/assets/uploads/images/UntilTheRock.png"><source src="/assets/uploads/videos/854923-hd-1920-1080-25fps-1768848893786-738266821.mp4" type="video/mp4"></video></div>
+          <div class="daw-timeline"><span>01:02:14</span><div><i></i></div><span>STUDIO TOUR</span></div>
+        </div>
+        <div class="daw-window audio-daw">
+          <div class="daw-titlebar"><span class="traffic-lights"><b></b><b></b><b></b></span><span>UNTILTHEROCK · MIX SESSIONS</span><span>48 kHz</span></div>
+          <div id="recording-playlist" class="recording-playlist"><p>Chargement des productions…</p></div>
+        </div>
+      </section>
       ${renderInlinePortfolio('Nos sessions en photos')}
       <div class="form-container">
         <form id="recording-form" enctype="multipart/form-data">
@@ -280,6 +310,109 @@ async function handleRecordingSession(e) {
 function updateRecordingDemoLabel(input) {
   document.getElementById('recording-demo-name').textContent = input.files[0]?.name || 'Aucun fichier sélectionné';
 }
+
+async function loadRecordingShowcase() {
+  const list = document.getElementById('recording-playlist');
+  if (!list) return;
+  try {
+    const items = await api.getPortfolio('recording');
+    const audioItems = items.filter(item => item.audio_url);
+    if (!audioItems.length) {
+      list.innerHTML = '<p class="empty-showcase">Les prochaines productions du studio seront bientôt ici.</p>';
+      return;
+    }
+    list.innerHTML = audioItems.map((item, index) => `
+      <div class="audio-track">
+        <button aria-label="Lire ${item.title}" onclick="toggleShowcaseTrack(${index}, this)">▶</button>
+        <div><strong>${item.title}</strong><span>${item.description || 'Production UntilTheRock'}</span></div>
+        <div class="waveform"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <audio preload="metadata"><source src="${item.audio_url}"></audio>
+      </div>`).join('');
+  } catch { list.innerHTML = '<p class="empty-showcase">Impossible de charger les productions.</p>'; }
+}
+
+function toggleShowcaseTrack(index, button) {
+  const tracks = [...document.querySelectorAll('.audio-track')];
+  const audio = tracks[index]?.querySelector('audio');
+  if (!audio) return;
+  tracks.forEach((track, i) => {
+    const other = track.querySelector('audio');
+    const control = track.querySelector('button');
+    if (i !== index) { other.pause(); control.textContent = '▶'; track.classList.remove('is-playing'); }
+  });
+  if (audio.paused) { audio.play(); button.textContent = 'Ⅱ'; tracks[index].classList.add('is-playing'); }
+  else { audio.pause(); button.textContent = '▶'; tracks[index].classList.remove('is-playing'); }
+  audio.onended = () => { button.textContent = '▶'; tracks[index].classList.remove('is-playing'); };
+}
+
+let _roomCalendarState = { year: new Date().getFullYear(), month: new Date().getMonth() + 1 };
+async function initRoomCalendars() { await loadRoomCalendars(); }
+async function loadRoomCalendars() {
+  const label = document.getElementById('room-cal-label');
+  if (!label) return;
+  const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  label.textContent = `${months[_roomCalendarState.month - 1]} ${_roomCalendarState.year}`;
+  const results = await Promise.all(['A', 'B'].map(room => api.getStudioMonth(room, _roomCalendarState.year, _roomCalendarState.month).catch(() => [])));
+  ['A', 'B'].forEach((room, i) => renderRoomCalendar(room, results[i]));
+}
+function renderRoomCalendar(room, bookings) {
+  const el = document.getElementById(`room-calendar-${room}`);
+  if (!el) return;
+  const { year, month } = _roomCalendarState;
+  const first = new Date(year, month - 1, 1);
+  const start = (first.getDay() + 6) % 7;
+  const days = new Date(year, month, 0).getDate();
+  const booked = new Set(bookings.map(item => item.date));
+  let html = ['L','M','M','J','V','S','D'].map(d => `<span class="mini-weekday">${d}</span>`).join('');
+  html += '<span></span>'.repeat(start);
+  for (let day = 1; day <= days; day++) {
+    const date = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    html += `<button class="mini-day ${booked.has(date) ? 'is-booked' : ''}" onclick="selectRoomDate('${room}', '${date}')" title="${booked.has(date) ? 'Créneau déjà demandé' : 'Disponible'}">${day}</button>`;
+  }
+  el.innerHTML = html;
+}
+function roomCalendarPrev() { if (_roomCalendarState.month === 1) { _roomCalendarState.month=12; _roomCalendarState.year--; } else _roomCalendarState.month--; loadRoomCalendars(); }
+function roomCalendarNext() { if (_roomCalendarState.month === 12) { _roomCalendarState.month=1; _roomCalendarState.year++; } else _roomCalendarState.month++; loadRoomCalendars(); }
+function selectRoomDate(room, date) { const form=document.getElementById('studio-form'); if (!form) return; form.elements.date.value=date; form.elements.studio_type.value=room === 'A' ? 'Studio A - Grand format' : 'Studio B - Enregistrement'; form.scrollIntoView({behavior:'smooth',block:'start'}); }
+
+function eventsPage() {
+  setTimeout(loadEventsPage, 0);
+  return `<section class="section events-page" style="padding-top:120px;">
+    <span class="eyebrow">VIVRE LA MUSIQUE</span><h2 class="section-title">Événements & prestations</h2>
+    <p class="events-intro">Concerts, soirées, prestations techniques et rendez-vous du studio.</p>
+    <div class="events-layout"><div><h3 class="events-heading">À la une & à venir</h3><div id="upcoming-events" class="events-feed"><p>Chargement…</p></div><h3 class="events-heading past-heading">Archives</h3><div id="past-events" class="events-feed"></div></div><aside class="events-calendar"><div class="events-cal-header"><button onclick="eventsCalMove(-1)">‹</button><h3>Calendrier</h3><button onclick="eventsCalMove(1)">›</button></div><div id="events-calendar-grid"></div><div class="events-legend"><i></i> Événement programmé</div></aside></div>
+  </section>`;
+}
+async function loadEventsPage() {
+  try {
+    const events = await api.getEvents(); const today = new Date().toISOString().slice(0,10);
+    const upcoming = events.filter(event => event.event_date >= today);
+    const past = events.filter(event => event.event_date < today).sort((a,b) => b.event_date.localeCompare(a.event_date));
+    renderEventFeed('upcoming-events', upcoming, 'Aucun événement à venir pour le moment.');
+    renderEventFeed('past-events', past, 'Les archives arriveront bientôt.');
+    renderEventsCalendar(events);
+  } catch { document.getElementById('upcoming-events').innerHTML = '<p>Impossible de charger les événements.</p>'; }
+}
+function renderEventFeed(id, events, empty) {
+  const target = document.getElementById(id); if (!target) return;
+  target.innerHTML = events.length ? events.map(event => `<article class="event-post">
+    ${event.image_url ? `<img src="${event.image_url}" alt="${event.title}">` : '<div class="event-placeholder">UTR</div>'}
+    <div class="event-post-body">${event.is_pinned ? '<span class="pinned">📌 ÉPINGLÉ</span>' : ''}<time>${new Date(event.event_date + 'T00:00:00').toLocaleDateString('fr-FR', {day:'numeric',month:'long',year:'numeric'})}</time><h4>${event.title}</h4>${event.location ? `<p class="event-location">⌖ ${event.location}</p>` : ''}<p>${event.excerpt || event.content || 'Plus d’informations prochainement.'}</p></div>
+  </article>`).join('') : `<p class="empty-events">${empty}</p>`;
+}
+let _eventsCalendarState = { year: new Date().getFullYear(), month: new Date().getMonth() };
+function renderEventsCalendar(events) {
+  const el = document.getElementById('events-calendar-grid'); if (!el) return;
+  window._eventsForCalendar = events;
+  const { year, month } = _eventsCalendarState;
+  const count = new Date(year, month + 1, 0).getDate(), start = (new Date(year,month,1).getDay()+6)%7;
+  const dates = new Set(events.filter(e => e.event_date.startsWith(`${year}-${String(month+1).padStart(2,'0')}`)).map(e => e.event_date));
+  let html = `<strong class="event-calendar-month">${new Date(year, month, 1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'})}</strong>`;
+  html += ['L','M','M','J','V','S','D'].map(d=>`<span class="mini-weekday">${d}</span>`).join('') + '<span></span>'.repeat(start);
+  for (let d=1; d<=count; d++) { const key=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; html += `<span class="event-day ${dates.has(key)?'has-event':''}">${d}</span>`; }
+  el.innerHTML=html;
+}
+function eventsCalMove(direction) { _eventsCalendarState.month += direction; if (_eventsCalendarState.month < 0) { _eventsCalendarState.month=11; _eventsCalendarState.year--; } if (_eventsCalendarState.month > 11) { _eventsCalendarState.month=0; _eventsCalendarState.year++; } renderEventsCalendar(window._eventsForCalendar || []); }
 
 async function handleContactForm(e) {
   e.preventDefault();
@@ -376,6 +509,7 @@ function adminDashboardPage() {
         <h2 class="section-title" style="margin: 0;">Dashboard Admin</h2>
         <div style="display: flex; gap: 1rem;">
           <button class="btn btn-primary" onclick="navigateTo('/admin-portfolio')">🖼️ Portfolio</button>
+          <button class="btn btn-primary" onclick="navigateTo('/admin-evenements')">📌 Événements</button>
           <button class="btn btn-outline" onclick="handleLogout()">Déconnexion</button>
           <button class="btn btn-primary" onclick="navigateTo('/admin-calendrier')">📅 Calendrier</button>
         </div>
@@ -388,6 +522,27 @@ function handleLogout() {
   localStorage.removeItem('admin_token');
   navigateTo('/admin-login');
 }
+
+function adminEventsPage() {
+  if (!localStorage.getItem('admin_token')) { navigateTo('/admin-login'); return ''; }
+  setTimeout(() => { document.getElementById('event-form')?.addEventListener('submit', saveEvent); loadAdminEvents(); }, 0);
+  return `<section class="section" style="padding-top:120px;max-width:1100px;">
+    <div class="admin-page-heading"><h2 class="section-title" style="margin:0;">Gestion des événements</h2><button class="btn btn-outline" onclick="navigateTo('/admin-dashboard')">← Dashboard</button></div>
+    <div class="admin-events-layout"><div class="form-container" style="margin:0;max-width:none;"><h3 id="event-form-title" style="margin-bottom:1.5rem;color:var(--primary);">Nouvelle publication</h3>
+      <form id="event-form"><input type="hidden" name="id" id="event-id"><div class="form-group"><label>Titre *</label><input name="title" required></div><div class="form-group"><label>Date *</label><input type="date" name="event_date" required></div><div class="form-group"><label>Date de fin</label><input type="date" name="end_date"></div><div class="form-group"><label>Lieu</label><input name="location"></div><div class="form-group"><label>Image (URL)</label><input name="image_url" placeholder="https://… ou /assets/uploads/images/…"></div><div class="form-group"><label>Résumé</label><textarea name="excerpt" rows="3"></textarea></div><div class="form-group"><label>Contenu</label><textarea name="content"></textarea></div><label class="pin-control"><input type="checkbox" name="is_pinned"> 📌 Épingler en tête de fil</label><button class="btn btn-primary" style="width:100%;margin-top:1.5rem;">Publier l’événement</button><button type="button" class="btn btn-outline" style="width:100%;margin-top:.75rem;" onclick="resetEventForm()">Annuler l’édition</button></form>
+    </div><div><h3 style="margin-bottom:1.5rem;">Publications</h3><div id="admin-events-list"></div></div></div>
+  </section>`;
+}
+let _adminEventsCache = [];
+async function loadAdminEvents() {
+  const target = document.getElementById('admin-events-list'); if (!target) return;
+  try { const events = await api.getEvents(); _adminEventsCache = events; target.innerHTML = events.length ? events.map(event => `<article class="admin-event-row"><div><span>${event.is_pinned ? '📌 ' : ''}${new Date(event.event_date+'T00:00:00').toLocaleDateString('fr-FR')}</span><h4>${event.title}</h4><p>${event.location || 'Sans lieu renseigné'}</p></div><div><button class="btn btn-outline" onclick="editEventById(${event.id})">Modifier</button><button class="btn btn-outline danger" onclick="removeEvent(${event.id})">Supprimer</button></div></article>`).join('') : '<p style="color:var(--gray);">Aucune publication.</p>'; } catch { target.innerHTML='<p>Erreur de chargement.</p>'; }
+}
+async function saveEvent(e) { e.preventDefault(); const form = e.target; const data=Object.fromEntries(new FormData(form)); data.is_pinned=form.is_pinned.checked; try { if(data.id) await api.updateEvent(data.id,data); else await api.createEvent(data); resetEventForm(); loadAdminEvents(); } catch { alert('Impossible d’enregistrer cet événement.'); } }
+function editEvent(event) { const form=document.getElementById('event-form'); Object.entries(event).forEach(([key,value])=> { if(form.elements[key] && key !== 'is_pinned') form.elements[key].value=value || ''; }); form.is_pinned.checked=Boolean(event.is_pinned); document.getElementById('event-form-title').textContent='Modifier la publication'; window.scrollTo({top:0,behavior:'smooth'}); }
+function editEventById(id) { const event = _adminEventsCache.find(item => item.id === id); if (event) editEvent(event); }
+function resetEventForm() { const form=document.getElementById('event-form'); if(form) form.reset(); const title=document.getElementById('event-form-title'); if(title) title.textContent='Nouvelle publication'; }
+async function removeEvent(id) { if(!confirm('Supprimer cet événement ?')) return; try { await api.deleteEvent(id); loadAdminEvents(); } catch { alert('Impossible de supprimer cet événement.'); } }
 
 // ============================================================
 // ADMIN - CHARGEMENT DES DONNÉES
@@ -839,7 +994,7 @@ function renderPublicPortfolio(items) {
   grid.innerHTML = items.map(item => `
     <div class="service-card portfolio-item" style="cursor:pointer;overflow:hidden;">
       ${item.image_url
-        ? `<div style="position:relative;overflow:hidden;border-radius:10px;margin-bottom:1rem;height:250px;"><img src="${item.image_url}" alt="${item.title}" style="width:100%;height:100%;object-fit:cover;transition:transform 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"><div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.7);padding:0.5rem 1rem;border-radius:20px;font-size:0.85rem;">${getServiceLabel(item.service_type)}</div></div>`
+        ? `<div style="position:relative;overflow:hidden;border-radius:10px;margin-bottom:1rem;height:250px;cursor:zoom-in;" onclick="openPortfolioModal(${item.id})"><img src="${item.image_url}" alt="${item.title}" style="width:100%;height:100%;object-fit:cover;transition:transform 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"><div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.7);padding:0.5rem 1rem;border-radius:20px;font-size:0.85rem;">${getServiceLabel(item.service_type)}</div></div>`
         : `<div style="width:100%;height:250px;background:linear-gradient(135deg,var(--dark-secondary),var(--dark));border-radius:10px;margin-bottom:1rem;"></div>`}
       <h3 style="color:var(--primary);margin-bottom:0.5rem;font-size:1.3rem;">${item.title}</h3>
       <p style="color:var(--gray);margin-bottom:1rem;line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${item.description || 'Découvrez ce projet...'}</p>
@@ -893,9 +1048,10 @@ async function openPortfolioModal(itemId) {
 function closePortfolioModal(event) {
   if (event && event.target.classList.contains('modal-content')) return;
   const modal = document.getElementById('portfolio-modal');
-  if (modal) {
+  if (modal && !modal.classList.contains('is-closing')) {
     modal.querySelectorAll('video, audio').forEach(m => m.pause());
-    modal.remove();
+    modal.classList.add('is-closing');
+    setTimeout(() => modal.remove(), 220);
   }
 }
 

@@ -160,4 +160,12 @@ async deleteBooking(type, id) {
   async blockSlot(data) {
     return this.request('/calendar/block', { method: 'POST', body: JSON.stringify(data) });
   },
+  async getStudioMonth(room, year, month) {
+    return this.request(`/calendar/studio/${room}/month/${year}/${month}`);
+  },
+  // Événements & prestations
+  async getEvents() { return this.request('/events'); },
+  async createEvent(data) { return this.request('/events', { method: 'POST', body: JSON.stringify(data) }); },
+  async updateEvent(id, data) { return this.request(`/events/${id}`, { method: 'PUT', body: JSON.stringify(data) }); },
+  async deleteEvent(id) { return this.request(`/events/${id}`, { method: 'DELETE' }); }
 };

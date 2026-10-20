@@ -17,7 +17,6 @@ router.post('/equipment', (req, res) => {
     [name, email, phone, equipment, start_date, end_date, message],
     function(err) {
       if (err) {
-        if (demoPath) fs.unlink(demoPath, () => {});
         return res.status(500).json({ error: 'Erreur lors de la réservation' });
       }
       logger.booking('equipment', { id: this.lastID, name, email });
@@ -30,18 +29,21 @@ router.post('/equipment', (req, res) => {
 router.post('/studio', (req, res) => {
   const { name, email, phone, studio_type, date, time_slot, duration, message } = req.body;
 
-  db.run(
-    `INSERT INTO booking_studio (name, email, phone, studio_type, date, time_slot, duration, message)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [name, email, phone, studio_type, date, time_slot, duration, message],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Erreur lors de la réservation' });
-      }
-      logger.booking('studio', { id: this.lastID, name, email });
-      res.json({ message: 'Réservation enregistrée', id: this.lastID });
-    }
-  );
+  db.get(`SELECT id FROM booking_studio WHERE studio_type = ? AND date = ? AND time_slot = ? AND status != 'cancelled'`,
+    [studio_type, date, time_slot], (checkError, existing) => {
+      if (checkError) return res.status(500).json({ error: 'Erreur lors de la vérification' });
+      if (existing) return res.status(409).json({ error: 'Ce créneau est déjà demandé pour cette salle' });
+      db.run(
+        `INSERT INTO booking_studio (name, email, phone, studio_type, date, time_slot, duration, message)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [name, email, phone, studio_type, date, time_slot, duration, message],
+        function(err) {
+          if (err) return res.status(500).json({ error: 'Erreur lors de la réservation' });
+          logger.booking('studio', { id: this.lastID, name, email });
+          res.json({ message: 'Réservation enregistrée', id: this.lastID });
+        }
+      );
+    });
 });
 
 // Session enregistrement

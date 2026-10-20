@@ -98,6 +98,20 @@ const initialize = () => {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`);
 
+      // Publications de la page Événements & prestations
+      db.run(`CREATE TABLE IF NOT EXISTS events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        event_date DATE NOT NULL,
+        end_date DATE,
+        location TEXT,
+        excerpt TEXT,
+        content TEXT,
+        image_url TEXT,
+        is_pinned INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`);
+
       // Créer un admin par défaut si n'existe pas
       const defaultPassword = bcrypt.hashSync('admin123', 10);
       db.run(`INSERT OR IGNORE INTO admin (username, password, email) 

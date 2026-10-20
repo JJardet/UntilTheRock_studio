@@ -75,6 +75,60 @@ const migrations = [
         );
       });
     }
+  },
+  {
+    version: 5,
+    description: 'Ajout des publications événements',
+    up: () => new Promise((resolve, reject) => {
+      db.run(`CREATE TABLE IF NOT EXISTS events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        event_date DATE NOT NULL,
+        end_date DATE,
+        location TEXT,
+        excerpt TEXT,
+        content TEXT,
+        image_url TEXT,
+        is_pinned INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`, err => err ? reject(err) : resolve());
+    })
+  },
+  {
+    version: 6,
+    description: 'Ajout de publications événements de démonstration',
+    up: () => new Promise((resolve, reject) => {
+      db.get('SELECT COUNT(*) AS count FROM events', [], (err, row) => {
+        if (err) return reject(err);
+        if (row.count > 0) return resolve();
+        const posts = [
+          ['Release Party — Until The Rock', '2026-11-14', 'Le Club, Paris', 'Une soirée dédiée aux artistes et productions du studio.', 1],
+          ['Résidence live : Les Satellites', '2026-12-05', 'UntilTheRock Studio', 'Deux jours de répétitions ouvertes et captation live.', 1],
+          ['Prestation son & lumière — Night Session', '2026-09-19', 'La Halle 18', 'Installation son et lumière complète pour une soirée électro.', 0],
+          ['Open Studio #04', '2026-07-03', 'UntilTheRock Studio', 'Portes ouvertes, écoutes et rencontres autour des sorties du studio.', 0]
+        ];
+        const stmt = db.prepare('INSERT INTO events (title, event_date, location, excerpt, is_pinned) VALUES (?, ?, ?, ?, ?)');
+        posts.forEach(post => stmt.run(post));
+        stmt.finalize(error => error ? reject(error) : resolve());
+      });
+    })
+  },
+  {
+    version: 7,
+    description: 'Ajout de photos portfolio de démonstration',
+    up: () => new Promise((resolve, reject) => {
+      const photos = [
+        ['equipment', 'Régie & système son', 'Aperçu du matériel disponible à la location.', '/assets/generated/studio-showcase-v1.png'],
+        ['equipment', 'Matériel du studio', 'Sélection de matériel professionnel.', '/assets/uploads/images/1409279-1788351433853-915413674.png'],
+        ['studio', 'Salle de répétition', 'Un espace prêt à accueillir vos sessions.', '/assets/generated/studio-showcase-v1.png'],
+        ['studio', 'Ambiance du studio', 'Un lieu pensé pour créer et répéter.', '/assets/uploads/images/prout.jpg'],
+        ['recording', 'Session en régie', 'Prise de son et mixage au studio.', '/assets/generated/studio-showcase-v1.png'],
+        ['recording', 'Univers UntilTheRock', 'Une ambiance chaleureuse pour vos productions.', '/assets/uploads/images/prout.jpg']
+      ];
+      const stmt = db.prepare('INSERT INTO portfolio (service_type, title, description, image_url) VALUES (?, ?, ?, ?)');
+      photos.forEach(photo => stmt.run(photo));
+      stmt.finalize(err => err ? reject(err) : resolve());
+    })
   }
 ];
 
