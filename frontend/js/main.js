@@ -1,3 +1,13 @@
+/*
+ * CONFIGURATION MANUELLE DES HORAIRES STUDIO
+ * Modifiez les deux constantes ci-dessous pour changer les horaires proposés au client
+ * (24 signifie minuit). Conservez exactement les mêmes valeurs dans
+ * backend/routes/payments.js, sinon le serveur refusera les horaires affichés.
+ * Fonctions concernées : reservationStudioPage() et refreshStudioAvailability().
+ */
+const STUDIO_OPENING_HOUR = 9;
+const STUDIO_CLOSING_HOUR = 24;
+
 // ============================================================
 // ROUTER
 // ============================================================
@@ -152,6 +162,11 @@ function renderEquipmentPack(title, text, details) {
 function reservationStudioPage() {
   setTimeout(() => {
     document.getElementById('studio-form')?.addEventListener('submit', handleStudioBooking);
+    ['studio-type', 'studio-date', 'studio-start-time', 'studio-duration'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', refreshStudioAvailability);
+    });
+    updateStudioPrice();
+    handleStudioPaymentReturn();
     loadPortfolioItems('studio');
     initRoomCalendars();
   }, 0);
@@ -168,34 +183,32 @@ function reservationStudioPage() {
         <p class="room-calendar-note">Les créneaux affichés en rouge sont déjà demandés. La réservation reste soumise à confirmation.</p>
       </section>
       <div class="form-container">
+        <div id="studio-payment-message" aria-live="polite"></div>
         <form id="studio-form">
           <div class="form-group"><label>Nom complet *</label><input type="text" name="name" required></div>
           <div class="form-group"><label>Email *</label><input type="email" name="email" required></div>
           <div class="form-group"><label>Téléphone *</label><input type="tel" name="phone" required></div>
           <div class="form-group">
             <label>Type de studio *</label>
-            <select name="studio_type" required>
+            <select id="studio-type" name="studio_type" required>
               <option value="">Sélectionnez...</option>
               <option value="Studio A - Grand format">Salle de répétition A — Grand format</option>
               <option value="Studio B - Enregistrement">Salle de répétition B — Configuration compacte</option>
               <option value="Studio C - Mixage">Studio C - Mixage</option>
             </select>
           </div>
-          <div class="form-group"><label>Date *</label><input type="date" name="date" required></div>
+          <div class="form-group"><label>Date *</label><input id="studio-date" type="date" name="date" required></div>
           <div class="form-group">
-            <label>Créneau horaire *</label>
-            <select name="time_slot" required>
+            <label>Heure de début *</label>
+            <select id="studio-start-time" name="start_time" required>
               <option value="">Sélectionnez...</option>
-              <option value="09h00 - 12h00">09h00 - 12h00</option>
-              <option value="12h00 - 15h00">12h00 - 15h00</option>
-              <option value="15h00 - 18h00">15h00 - 18h00</option>
-              <option value="18h00 - 21h00">18h00 - 21h00</option>
-              <option value="21h00 - 00h00">21h00 - 00h00</option>
+              ${Array.from({ length: STUDIO_CLOSING_HOUR - STUDIO_OPENING_HOUR }, (_, i) => STUDIO_OPENING_HOUR + i).map(hour => `<option value="${String(hour).padStart(2, '0')}:00">${String(hour).padStart(2, '0')}:00</option>`).join('')}
             </select>
           </div>
-          <div class="form-group"><label>Durée (heures) *</label><input type="number" name="duration" min="1" max="12" required></div>
+          <div class="form-group"><label>Durée (heures) *</label><select id="studio-duration" name="duration" required><option value="">Sélectionnez...</option>${Array.from({ length: STUDIO_CLOSING_HOUR - STUDIO_OPENING_HOUR }, (_, i) => `<option value="${i + 1}">${i + 1} h</option>`).join('')}</select><small id="studio-price" style="display:block;margin-top:.5rem;color:var(--primary);font-weight:700;">Choisissez l'heure et la durée pour afficher le montant.</small></div>
           <div class="form-group"><label>Message / Projet</label><textarea name="message"></textarea></div>
-          <button type="submit" class="btn btn-primary" style="width: 100%;">Réserver</button>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Payer et réserver</button>
+          <p style="color:var(--gray);font-size:.85rem;margin-top:1rem;text-align:center;">Paiement sécurisé obligatoire · 10 € par heure réservée</p>
         </form>
       </div>
     </section>
@@ -296,11 +309,89 @@ async function handleEquipmentBooking(e) {
 
 async function handleStudioBooking(e) {
   e.preventDefault();
+  const button = e.target.querySelector('button[type="submit"]');
   try {
-    await api.bookStudio(Object.fromEntries(new FormData(e.target)));
-    alert('Réservation enregistrée. Nous vous contacterons sous 24 h.');
-    e.target.reset();
-  } catch { alert('Erreur lors de la réservation. Veuillez réessayer.'); }
+    button.disabled = true;
+    button.textContent = 'Redirection vers le paiement…';
+    const result = await api.startStudioCheckout(Object.fromEntries(new FormData(e.target)));
+    window.location.assign(result.checkoutUrl);
+  } catch {
+    alert('Impossible de démarrer le paiement. Vérifiez le créneau puis réessayez.');
+    button.disabled = false;
+    button.textContent = 'Payer et réserver';
+  }
+}
+
+function updateStudioPrice() {
+  const startTime = document.getElementById('studio-start-time');
+  const duration = document.getElementById('studio-duration');
+  const price = document.getElementById('studio-price');
+  if (!startTime || !duration || !price) return;
+  const hours = Number(duration.value);
+  const start = Number(startTime.value.split(':')[0]);
+  const end = start + hours;
+  price.textContent = hours && startTime.value ? `Montant à payer : ${hours * 10} € (${startTime.value} – ${String(end === STUDIO_CLOSING_HOUR && STUDIO_CLOSING_HOUR === 24 ? 0 : end).padStart(2, '0')}:00)` : 'Choisissez l’heure et la durée pour afficher le montant.';
+}
+
+function roomCodeForStudio(studioType) {
+  return { 'Studio A - Grand format': 'A', 'Studio B - Enregistrement': 'B', 'Studio C - Mixage': 'C' }[studioType];
+}
+
+function studioRangeOverlaps(start, duration, timeSlot) {
+  const match = String(timeSlot).match(/^(\d{1,2})h00\s*-\s*(\d{1,2})h00$/);
+  if (!match) return false;
+  const existingStart = Number(match[1]);
+  const existingEnd = Number(match[2]) === 0 ? 24 : Number(match[2]);
+  return start < existingEnd && existingStart < start + duration;
+}
+
+async function refreshStudioAvailability() {
+  const type = document.getElementById('studio-type');
+  const date = document.getElementById('studio-date');
+  const startSelect = document.getElementById('studio-start-time');
+  const durationSelect = document.getElementById('studio-duration');
+  if (!type || !date || !startSelect || !durationSelect) return;
+  const room = roomCodeForStudio(type.value);
+  let bookings = [];
+  if (room && date.value) bookings = await api.getStudioSlots(room, date.value).catch(() => []);
+  const selectedDuration = Number(durationSelect.value);
+  [...startSelect.options].forEach(option => {
+    if (!option.value) return;
+    const start = Number(option.value.split(':')[0]);
+    option.disabled = Boolean(selectedDuration && (start + selectedDuration > STUDIO_CLOSING_HOUR || bookings.some(slot => studioRangeOverlaps(start, selectedDuration, slot))));
+  });
+  if (startSelect.selectedOptions[0]?.disabled) startSelect.value = '';
+  const selectedStart = Number(startSelect.value.split(':')[0]);
+  [...durationSelect.options].forEach(option => {
+    if (!option.value) return;
+    const duration = Number(option.value);
+    option.disabled = Boolean(selectedStart && (selectedStart + duration > STUDIO_CLOSING_HOUR || bookings.some(slot => studioRangeOverlaps(selectedStart, duration, slot))));
+  });
+  if (durationSelect.selectedOptions[0]?.disabled) durationSelect.value = '';
+  updateStudioPrice();
+}
+
+async function handleStudioPaymentReturn() {
+  const query = new URLSearchParams(window.location.search);
+  const message = document.getElementById('studio-payment-message');
+  if (!message || !query.has('payment')) return;
+  const show = (text, color = 'var(--primary)') => {
+    message.innerHTML = `<div style="margin:0 0 1.5rem;padding:1rem 1.25rem;border-radius:8px;background:var(--dark-secondary);border-left:4px solid ${color};line-height:1.55;">${text}</div>`;
+  };
+  if (query.get('payment') === 'cancelled') {
+    show('Le paiement a été annulé : votre demande de réservation n’a pas été envoyée.', '#ff9800');
+    return;
+  }
+  const sessionId = query.get('session_id');
+  if (!sessionId) return show('La confirmation du paiement est introuvable. Contactez le studio si vous avez été débité.', '#f44336');
+  show('Vérification de votre paiement…', '#2196f3');
+  try {
+    const result = await api.getCheckoutSession(sessionId);
+    if (!result.paid) return show('Votre paiement est encore en cours de confirmation. Vous recevrez un e-mail dès sa validation.', '#ff9800');
+    show('Paiement reçu. Votre demande de réservation est en cours de validation par le studio ; vous recevrez une réponse sous peu.', '#4caf50');
+  } catch {
+    show('Votre retour de paiement a bien été reçu. Le studio vérifie la transaction et vous contactera sous peu.', '#ff9800');
+  }
 }
 
 async function handleRecordingSession(e) {
@@ -619,14 +710,14 @@ function renderBookingsList(bookings, type) {
 function renderBookingDetails(b, type) {
   switch (type) {
     case 'equipment': return `<p style="color: var(--light); margin-bottom: 0.5rem;"><strong>🎸 Matériel:</strong> ${b.equipment}</p><p style="color: var(--gray); font-size: 0.9rem;">📅 Du ${new Date(b.start_date).toLocaleDateString('fr-FR')} au ${new Date(b.end_date).toLocaleDateString('fr-FR')}</p>`;
-    case 'studio':    return `<p style="color: var(--light); margin-bottom: 0.5rem;"><strong>🎙️ Studio:</strong> ${b.studio_type}</p><p style="color: var(--gray); font-size: 0.9rem;">📅 ${new Date(b.date).toLocaleDateString('fr-FR')} | 🕐 ${b.time_slot} (${b.duration}h)</p>`;
+    case 'studio':    return `<p style="color: var(--light); margin-bottom: 0.5rem;"><strong>🎙️ Studio:</strong> ${b.studio_type}</p><p style="color: var(--gray); font-size: 0.9rem;">📅 ${new Date(b.date).toLocaleDateString('fr-FR')} | 🕐 ${b.time_slot} (${b.duration}h)</p><p style="color: var(--gray); font-size: 0.9rem; margin-top:.5rem;">💳 Paiement : ${b.payment_status === 'paid' ? 'Payé' : b.payment_status === 'payment_pending' ? 'Paiement en cours — créneau bloqué' : b.payment_status === 'refunded' ? 'Remboursé' : b.payment_status === 'refund_pending' ? 'Remboursement en cours' : 'Non payé'}${b.amount_paid ? ` · ${(b.amount_paid / 100).toFixed(2).replace('.', ',')} €` : ''}</p>`;
     case 'recording': return `<p style="color: var(--light); margin-bottom: 0.5rem;"><strong>🎵 Projet:</strong> ${b.project_type}</p><p style="color: var(--gray); font-size: 0.9rem;">📅 ${new Date(b.date).toLocaleDateString('fr-FR')} | ⏱️ ${b.duration}h</p>${b.has_demo ? `<button onclick="downloadRecordingDemo(${b.id})" class="btn btn-outline" style="margin-top: 1rem; padding: 0.5rem 1rem; font-size: 0.9rem;">⬇️ Télécharger la maquette</button>` : ''}`;
     default: return '';
   }
 }
 
-function getStatusColor(s) { return { pending: '#ff9800', confirmed: '#2196f3', completed: '#4caf50', cancelled: '#f44336' }[s] || '#666'; }
-function getStatusLabel(s) { return { pending: '⏳ En attente', confirmed: '✅ Confirmé', completed: '✓ Terminé', cancelled: '❌ Annulé' }[s] || s; }
+function getStatusColor(s) { return { payment_pending: '#ff9800', pending: '#ff9800', confirmed: '#2196f3', completed: '#4caf50', cancelled: '#f44336' }[s] || '#666'; }
+function getStatusLabel(s) { return { payment_pending: '💳 Paiement en cours', pending: '⏳ En attente', confirmed: '✅ Confirmé', completed: '✓ Terminé', cancelled: '❌ Annulé' }[s] || s; }
 
 async function downloadRecordingDemo(id) {
   try {

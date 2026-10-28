@@ -129,6 +129,28 @@ const migrations = [
       photos.forEach(photo => stmt.run(photo));
       stmt.finalize(err => err ? reject(err) : resolve());
     })
+  },
+  {
+    version: 8,
+    description: 'Ajout du suivi des paiements Stripe pour les réservations studio',
+    up: () => new Promise((resolve, reject) => {
+      const columns = [
+        'stripe_session_id TEXT',
+        'stripe_payment_intent_id TEXT',
+        'stripe_refund_id TEXT',
+        "payment_status TEXT DEFAULT 'unpaid'",
+        'amount_paid INTEGER DEFAULT 0'
+      ];
+      let index = 0;
+      const next = () => {
+        if (index === columns.length) return resolve();
+        db.run(`ALTER TABLE booking_studio ADD COLUMN ${columns[index++]}`, error => {
+          if (error && !error.message.includes('duplicate column')) return reject(error);
+          next();
+        });
+      };
+      next();
+    })
   }
 ];
 

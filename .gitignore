@@ -3,6 +3,7 @@ node_modules/
 npm-debug.log
 yarn-error.log
 package-lock.json
+.env
 
 # Base de données
 *.db
@@ -29,3 +30,7 @@ build/
 *.temp
 *.bak
 *.swp
+
+.env 
+**/.env 
+!.env.example

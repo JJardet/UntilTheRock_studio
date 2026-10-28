@@ -13,7 +13,8 @@ function studioBookingCoversSlot(studioSlot, calendarSlot) {
   const range = String(studioSlot).match(/(\d{1,2})h?\d*\s*-\s*(\d{1,2})h?\d*/);
   if (!range) return false;
   const hour = Number(String(calendarSlot).split(':')[0]);
-  return hour >= Number(range[1]) && hour < Number(range[2]);
+  const end = Number(range[2]) === 0 ? 24 : Number(range[2]);
+  return hour >= Number(range[1]) && hour < end;
 }
 
 // -------------------------------------------------------
@@ -42,7 +43,7 @@ router.get('/month/:year/:month', (req, res) => {
 // PUBLIC : disponibilités d'une salle de répétition (A ou B)
 router.get('/studio/:room/month/:year/:month', (req, res) => {
   const { room, year, month } = req.params;
-  const allowedRooms = { A: 'Studio A - Grand format', B: 'Studio B - Enregistrement' };
+  const allowedRooms = { A: 'Studio A - Grand format', B: 'Studio B - Enregistrement', C: 'Studio C - Mixage' };
   if (!allowedRooms[room]) return res.status(400).json({ error: 'Salle invalide' });
   const from = `${year}-${String(month).padStart(2, '0')}-01`;
   const to = `${year}-${String(month).padStart(2, '0')}-31`;
@@ -51,6 +52,20 @@ router.get('/studio/:room/month/:year/:month', (req, res) => {
     [allowedRooms[room], from, to], (err, rows) => {
       if (err) return res.status(500).json({ error: 'Erreur serveur' });
       res.json(rows);
+    });
+});
+
+// PUBLIC : plages déjà demandées pour une salle et une date. Les demandes en attente
+// de paiement sont incluses afin de ne jamais proposer un créneau qui se chevauche.
+router.get('/studio/:room/slots/:date', (req, res) => {
+  const allowedRooms = { A: 'Studio A - Grand format', B: 'Studio B - Enregistrement', C: 'Studio C - Mixage' };
+  const studioType = allowedRooms[req.params.room];
+  if (!studioType) return res.status(400).json({ error: 'Salle invalide' });
+  db.all(`SELECT time_slot FROM booking_studio
+          WHERE studio_type = ? AND date = ? AND status != 'cancelled'`,
+    [studioType, req.params.date], (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Erreur serveur' });
+      res.json(rows.map(row => row.time_slot));
     });
 });
 

@@ -59,6 +59,17 @@ async deleteBooking(type, id) {
     });
   },
 
+  async startStudioCheckout(data) {
+    return this.request('/payments/studio-checkout', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async getCheckoutSession(sessionId) {
+    return this.request(`/payments/checkout-session/${encodeURIComponent(sessionId)}`);
+  },
+
   async bookRecording(data) {
     return this.request('/bookings/recording', {
       method: 'POST',
@@ -162,6 +173,9 @@ async deleteBooking(type, id) {
   },
   async getStudioMonth(room, year, month) {
     return this.request(`/calendar/studio/${room}/month/${year}/${month}`);
+  },
+  async getStudioSlots(room, date) {
+    return this.request(`/calendar/studio/${room}/slots/${date}`);
   },
   // Événements & prestations
   async getEvents() { return this.request('/events'); },

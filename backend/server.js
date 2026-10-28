@@ -13,12 +13,15 @@ const portfolioRoutes = require('./routes/portfolio');
 const contactRoutes = require('./routes/contact');
 const calendarRoutes = require('./routes/calendar');
 const eventRoutes = require('./routes/events');
+const paymentRoutes = require('./routes/payments');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
+// Stripe signe le corps brut : cette route doit être déclarée avant bodyParser.
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), paymentRoutes.webhook);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(requestLogger);  // Logger les requêtes
@@ -33,6 +36,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/payments', paymentRoutes.router);
 
 app.get(['/mastering', '/portfolio/mastering'], (req, res) => {
   res.status(404).send('Page introuvable');
