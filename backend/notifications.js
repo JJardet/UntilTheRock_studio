@@ -1,20 +1,20 @@
-const nodemailer = require('nodemailer');
 const { logger } = require('./logger');
 
-function getTransporter() {
-  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) return null;
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: Number(process.env.EMAIL_PORT || 587),
-    secure: Number(process.env.EMAIL_PORT) === 465,
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD }
-  });
+function getBrevoConfig() {
+  if (!process.env.BREVO_API_KEY || !process.env.BREVO_SENDER_EMAIL) return null;
+  return {
+    apiKey: process.env.BREVO_API_KEY,
+    sender: {
+      email: process.env.BREVO_SENDER_EMAIL,
+      name: process.env.BREVO_SENDER_NAME || 'UntilTheRock Studio'
+    }
+  };
 }
 
 async function sendStudioBookingDecision(booking, status, refundAmount) {
-  const transporter = getTransporter();
-  if (!transporter) {
-    logger.error('Notification e-mail non envoyée : configuration EMAIL_* absente');
+  const brevo = getBrevoConfig();
+  if (!brevo) {
+    logger.error('Notification e-mail non envoyée : configuration BREVO_* absente');
     return false;
   }
 
@@ -28,13 +28,32 @@ async function sendStudioBookingDecision(booking, status, refundAmount) {
     : `Bonjour ${booking.name},\n\nVotre réservation (${details}) a été annulée. ${refundAmount ? `Un remboursement de ${(refundAmount / 100).toFixed(2).replace('.', ',')} € a été déclenché sur votre moyen de paiement.` : ''}\n\nUntilTheRock Studio`;
 
   try {
-    const result = await transporter.sendMail({ from: process.env.EMAIL_FROM || process.env.EMAIL_USER, to: booking.email, subject, text });
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': brevo.apiKey,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: brevo.sender,
+        to: [{ email: booking.email, name: booking.name }],
+        subject,
+        textContent: text
+      })
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(`Brevo API ${response.status}`);
+      error.response = result;
+      throw error;
+    }
+
     logger.info('Notification e-mail réservation envoyée', {
       bookingId: booking.id,
       status,
-      messageId: result.messageId,
-      accepted: result.accepted,
-      rejected: result.rejected
+      messageId: result.messageId
     });
     return true;
   } catch (error) {

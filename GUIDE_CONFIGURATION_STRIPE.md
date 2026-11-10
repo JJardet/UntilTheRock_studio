@@ -37,33 +37,29 @@ STRIPE_WEBHOOK_SECRET=whsec_votre_secret_de_webhook
 # L’URL publique exacte, sans slash final
 APP_URL=https://votre-domaine.fr
 
-# E-mails envoyés lors de la confirmation ou de l’annulation
-EMAIL_HOST=smtp.votre-fournisseur.fr
-EMAIL_PORT=587
-EMAIL_USER=notifications@votre-domaine.fr
-EMAIL_PASSWORD=votre_mot_de_passe_smtp
-EMAIL_FROM=UntilTheRock <notifications@votre-domaine.fr>
+# E-mails envoyés lors de la confirmation ou de l’annulation via Brevo
+BREVO_API_KEY=xkeysib-votre-cle-api
+BREVO_SENDER_EMAIL=notifications@votre-domaine.fr
+BREVO_SENDER_NAME=UntilTheRock Studio
 ```
 
-Pour un test local, utilisez `APP_URL=http://localhost:3000`. Mailjet peut aussi être utilisé en recette, à condition d’employer une adresse expéditrice validée dans Mailjet.
+Pour un test local, utilisez `APP_URL=http://localhost:3000`. L’adresse `BREVO_SENDER_EMAIL` doit être validée dans Brevo (ou appartenir à un domaine authentifié).
 
-### Configuration Mailjet (notifications e-mail)
+### Configuration Brevo (notifications e-mail)
 
-Le site envoie un e-mail après la confirmation ou l’annulation d’une réservation par le studio. Il utilise SMTP ; aucune modification de code n’est nécessaire pour Mailjet.
+Le site envoie un e-mail après la confirmation ou l’annulation d’une réservation par le studio via l’API transactionnelle Brevo.
 
-1. Créez votre compte Mailjet et validez d’abord l’adresse qui servira d’expéditeur (ou votre domaine complet) dans **Account settings → Senders & Domains**.
-2. Dans **Account settings → SMTP and SEND API settings**, récupérez l’**API Key** et la **Secret Key**. L’API Key est le nom d’utilisateur SMTP ; la Secret Key est le mot de passe, pas le mot de passe de connexion à Mailjet.
+1. Dans Brevo, validez l’adresse expéditrice (ou authentifiez votre domaine) dans **Settings → Senders & IP**.
+2. Créez une clé API v3 dans **Settings → API Keys & MCP**.
 3. Renseignez dans `backend/.env` :
 
 ```dotenv
-EMAIL_HOST=in-v3.mailjet.com
-EMAIL_PORT=587
-EMAIL_USER=votre_api_key_mailjet
-EMAIL_PASSWORD=votre_secret_key_mailjet
-EMAIL_FROM=UntilTheRock <une-adresse-validee@votre-domaine.fr>
+BREVO_API_KEY=xkeysib-votre-cle-api
+BREVO_SENDER_EMAIL=une-adresse-validee@votre-domaine.fr
+BREVO_SENDER_NAME=UntilTheRock Studio
 ```
 
-Le port `587` utilise TLS dans l’application. Si votre hébergeur bloque ce port, Mailjet propose aussi le port `465` avec SSL ; remplacez alors seulement `EMAIL_PORT=465`.
+La clé API Brevo est un secret : ne la commitez jamais et ne l’exposez pas dans le frontend.
 
 Après toute modification, redémarrez l’application :
 
@@ -188,6 +184,6 @@ node --check notifications.js
 | --- | --- |
 | « Le paiement en ligne n’est pas encore configuré » | `STRIPE_SECRET_KEY` est absente ou le serveur n’a pas redémarré. |
 | Paiement réussi mais réservation encore en attente de paiement | Vérifiez `STRIPE_WEBHOOK_SECRET`, l’URL du webhook et les livraisons dans Stripe. |
-| Aucun e-mail après confirmation/annulation | Vérifiez les variables `EMAIL_*`, les logs PM2 et le dossier spam. |
+| Aucun e-mail après confirmation/annulation | Vérifiez les variables `BREVO_*`, l’adresse expéditrice validée, les logs PM2 et le dossier spam. |
 | Stripe ne peut pas joindre le webhook local | Lancez `stripe listen --forward-to localhost:3000/api/payments/webhook`. |
 | Redirection vers le mauvais domaine | Corrigez `APP_URL`, puis redémarrez le backend. |
